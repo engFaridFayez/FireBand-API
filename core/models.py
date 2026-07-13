@@ -54,3 +54,4 @@ class Booking(models.Model):
     duration = models.ForeignKey(DurationOption,on_delete=models.PROTECT)
     team_members = models.PositiveIntegerField()
     notes = models.TextField(blank=True)
+
