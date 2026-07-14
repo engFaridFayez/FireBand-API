@@ -7,20 +7,34 @@ from core.models import Booking, DurationOption, EventCategory, Rule, SubCategor
 #               GET 
 #=======================================
 class RuleSerializer(serializers.ModelSerializer):
+    sub_category_name = serializers.CharField(
+        source="sub_category.name",
+        read_only=True,
+    )
+
     class Meta:
         model = Rule
         fields = [
-            'id',
-            'text',
-            'order',
+            "id",
+            "text",
+            "order",
+            "sub_category",
+            "sub_category_name",
         ]
 class DurationOptionSerializer(serializers.ModelSerializer):
+    sub_category_name = serializers.CharField(
+        source="sub_category.name",
+        read_only=True,
+    )
+
     class Meta:
         model = DurationOption
         fields = [
             "id",
             "title",
-            "minutes"
+            "minutes",
+            "sub_category",
+            "sub_category_name",
         ]
 class SubCategorySerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True,read_only=True)
@@ -33,8 +47,11 @@ class SubCategorySerializer(serializers.ModelSerializer):
             'slug',
             'description',
             'image',
+            "category",
             'duration',
             'rules',
+            "min_members",
+            "max_members"
         ]
 class EventCategorySerializer(serializers.ModelSerializer):
     subcategories = SubCategorySerializer(many=True,read_only=True)
@@ -66,11 +83,22 @@ class BookingSerializer(serializers.ModelSerializer):
 class EventCategoryWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventCategory
-        fields = "__all__"
+        fields = [
+            "name",
+            "image",
+            "description",
+        ]
 class SubCategoryWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
-        fields = "__all__"
+        fields = [
+            "name",
+            "image",
+            "description",
+            "category",
+            "min_members",
+            "max_members"
+        ]
 class RuleWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rule

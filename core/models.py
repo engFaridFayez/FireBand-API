@@ -1,5 +1,7 @@
 from django.db import models
 
+from core.utils import generate_unique_slug
+
 # Create your models here.
 class EventCategory(models.Model):
     name = models.CharField(max_length=255)
@@ -7,9 +9,17 @@ class EventCategory(models.Model):
     image = models.ImageField(upload_to="event_categories/")
     description = models.TextField(null=True,blank=True)
 
+    def save(self, *args, **kwargs):
+        self.slug = generate_unique_slug(
+            self,
+            EventCategory,
+            self.name,
+        )
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
-    
 class SubCategory(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -18,6 +28,15 @@ class SubCategory(models.Model):
     category = models.ForeignKey(EventCategory,on_delete=models.CASCADE,related_name="subcategories")
     min_members = models.PositiveIntegerField(default=5)
     max_members = models.PositiveIntegerField(default=40)
+
+    def save(self, *args, **kwargs):
+        self.slug = generate_unique_slug(
+            self,
+            SubCategory,
+            self.name,
+        )
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

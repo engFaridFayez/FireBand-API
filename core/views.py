@@ -9,7 +9,6 @@ class EventCategoryView(viewsets.ModelViewSet):
         "subcategories__rules",
         "subcategories__duration_options"
     )
-    lookup_field= "slug"
 
     def get_serializer_class(self):
         if self.action in ["list","retrieve"]:
@@ -23,7 +22,6 @@ class SubCategoryView(viewsets.ModelViewSet):
         "rules",
         "duration_options"
     )
-    lookup_field= "slug"
 
     def get_serializer_class(self):
         if self.action in ["list","retrieve"]:
@@ -31,7 +29,10 @@ class SubCategoryView(viewsets.ModelViewSet):
         return SubCategoryWriteSerializer
 class RuleView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    queryset = Rule.objects.select_related("sub_category")
+    queryset = Rule.objects.select_related(
+        "sub_category",
+        "sub_category__category",
+    )
     
     def get_serializer_class(self):
         if self.action in ["list","retrieve"]:
@@ -41,13 +42,16 @@ class RuleView(viewsets.ModelViewSet):
 
 class DurationView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    queryset = DurationOption.objects.all()
-    
+
+    queryset = DurationOption.objects.select_related(
+        "sub_category",
+        "sub_category__category",
+    )
+
     def get_serializer_class(self):
-        if self.action in ["list","retrieve"]:
+        if self.action in ["list", "retrieve"]:
             return DurationOptionSerializer
         return DurationOptionWriteSerializer
-    
 
 class BookingView(viewsets.ModelViewSet):
     queryset = Booking.objects.select_related(
