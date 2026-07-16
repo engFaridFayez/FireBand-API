@@ -16,5 +16,5 @@ class TeamMember(models.Model):
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=100)
     accent = models.CharField(max_length=30)
-    image = models.ImageField(upload_to="team/")
+    image = models.ImageField(upload_to="team/",blank=True)
     order = models.PositiveIntegerField(default=0)
