@@ -3,8 +3,11 @@ from urllib.parse import urlparse
 from core.models import SubCategory
 from core.serialziers import SubCategorySerializer
 from homeContent.models import GalleryImage, Reel, Show, TeamMember
-
-
+from urllib.parse import urlparse
+from .utils import (
+    get_facebook_embed_url,
+    get_youtube_embed_url,
+)
 
 
 class ShowSerializer(serializers.ModelSerializer):
@@ -27,6 +30,10 @@ class GalleryImageSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class GalleryImageWriteSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
     class Meta:
         model = GalleryImage
         fields = [
@@ -66,7 +73,13 @@ class ReelSerializer(serializers.ModelSerializer):
         model = Reel
         fields = "__all__"
 
+
 class ReelWriteSerializer(serializers.ModelSerializer):
+    thumbnail = serializers.ImageField(
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = Reel
         fields = [
@@ -74,14 +87,14 @@ class ReelWriteSerializer(serializers.ModelSerializer):
             "title",
             "thumbnail",
             "platform",
-            "url",
+            "embed_url",
             "order",
             "is_active",
         ]
 
     def validate(self, attrs):
         platform = attrs.get("platform")
-        url = attrs.get("url")
+        url = attrs.get("embed_url")
 
         if not url:
             return attrs
@@ -94,19 +107,10 @@ class ReelWriteSerializer(serializers.ModelSerializer):
                 "www.youtube.com",
                 "youtu.be",
             ],
-            "instagram": [
-                "instagram.com",
-                "www.instagram.com",
-            ],
             "facebook": [
                 "facebook.com",
                 "www.facebook.com",
                 "fb.watch",
-            ],
-            "tiktok": [
-                "tiktok.com",
-                "www.tiktok.com",
-                "vm.tiktok.com",
             ],
         }
 
@@ -118,8 +122,15 @@ class ReelWriteSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(
                 {
-                    "url": f"This URL does not belong to {platform.title()}."
+                    "embed_url": f"This URL does not belong to {platform.title()}."
                 }
             )
+
+        converters = {
+            "youtube": get_youtube_embed_url,
+            "facebook": get_facebook_embed_url,
+        }
+
+        attrs["embed_url"] = converters[platform](url)
 
         return attrs

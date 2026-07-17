@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from core.models import Booking, DurationOption, EventCategory, Rule, SubCategory
 from core.serialziers import BookingSerializer, BookingWriteSerializer, DurationOptionSerializer, DurationOptionWriteSerializer, EventCategorySerializer, EventCategoryWriteSerializer, RuleSerializer, RuleWriteSerializer, SubCategorySerializer, SubCategoryWriteSerializer
+from rest_framework import status
+from rest_framework.response import Response
 # Create your views here.
 class EventCategoryView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -14,6 +16,7 @@ class EventCategoryView(viewsets.ModelViewSet):
         if self.action in ["list","retrieve"]:
             return EventCategorySerializer
         return EventCategoryWriteSerializer
+    
 class SubCategoryView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = SubCategory.objects.select_related(

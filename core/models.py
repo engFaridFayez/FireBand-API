@@ -15,9 +15,10 @@ class EventCategory(models.Model):
             EventCategory,
             self.name,
         )
-
+    
         super().save(*args, **kwargs)
-
+    class Meta:
+        ordering = ["id"]
     def __str__(self):
         return self.name
 class SubCategory(models.Model):
@@ -28,6 +29,7 @@ class SubCategory(models.Model):
     category = models.ForeignKey(EventCategory,on_delete=models.CASCADE,related_name="subcategories")
     min_members = models.PositiveIntegerField(default=5)
     max_members = models.PositiveIntegerField(default=40)
+    is_custom = models.BooleanField(default=False) 
 
     def save(self, *args, **kwargs):
         self.slug = generate_unique_slug(

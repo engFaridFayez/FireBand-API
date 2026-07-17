@@ -51,7 +51,8 @@ class SubCategorySerializer(serializers.ModelSerializer):
             'duration',
             'rules',
             "min_members",
-            "max_members"
+            "max_members",
+            "is_custom", 
         ]
 class EventCategorySerializer(serializers.ModelSerializer):
     subcategories = SubCategorySerializer(many=True,read_only=True)
@@ -84,20 +85,25 @@ class EventCategoryWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventCategory
         fields = [
+            "id",
             "name",
+            "slug",
             "image",
             "description",
         ]
+        read_only_fields = ["id", "slug"]
 class SubCategoryWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
         fields = [
+            "id",
             "name",
             "image",
             "description",
             "category",
             "min_members",
-            "max_members"
+            "max_members",
+            "is_custom",
         ]
 class RuleWriteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -149,14 +155,14 @@ class BookingWriteSerializer(serializers.ModelSerializer):
                     f"Members must be between {sub_category.min_members} and {sub_category.max_members}."
             })
         
-        if sub_category.slug == "other" and not attrs.get("custom_sub_category"):
+        if sub_category.is_custom and not attrs.get("custom_sub_category"):
             raise serializers.ValidationError({
                 "custom_sub_category": "This field is required."
             })
-        
-        if sub_category.slug != "other" and attrs.get("custom_sub_category"):
+
+        if not sub_category.is_custom and attrs.get("custom_sub_category"):
             raise serializers.ValidationError({
-                "custom_sub_category": "This field can only be used with the 'other' sub category."
+                "custom_sub_category": "This field can only be used with a custom sub category."
             })
         
         if attrs.get("event_date") and attrs["event_date"] < date.today():
