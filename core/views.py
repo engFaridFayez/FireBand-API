@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework import permissions
+from core.bookings.services.email_service import send_booking_email
 from core.models import Booking, DurationOption, EventCategory, Rule, SubCategory
 from core.serialziers import BookingSerializer, BookingWriteSerializer, DurationOptionSerializer, DurationOptionWriteSerializer, EventCategorySerializer, EventCategoryWriteSerializer, RuleSerializer, RuleWriteSerializer, SubCategorySerializer, SubCategoryWriteSerializer
 from rest_framework import status
@@ -27,9 +28,16 @@ class SubCategoryView(viewsets.ModelViewSet):
     )
 
     def get_serializer_class(self):
-        if self.action in ["list","retrieve"]:
+        if self.action in ["list", "retrieve"]:
             return SubCategorySerializer
         return SubCategoryWriteSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        category_id = self.request.query_params.get("category")
+        if category_id is not None:
+            qs = qs.filter(category_id=category_id)
+        return qs
 class RuleView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Rule.objects.select_related(
@@ -62,6 +70,7 @@ class BookingView(viewsets.ModelViewSet):
         "sub_category",
         "duration",
     )
+    
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -71,3 +80,7 @@ class BookingView(viewsets.ModelViewSet):
         if self.action == "create":
             return [permissions.AllowAny()]
         return [permissions.IsAdminUser()]
+    def perform_create(self, serializer):
+        booking = serializer.save()
+
+        send_booking_email(booking)

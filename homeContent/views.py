@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from django.db.models import Max
+from rest_framework.pagination import PageNumberPagination
 # Create your views here.
 class ShowViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -20,8 +21,13 @@ class TeamViewset(viewsets.ModelViewSet):
     queryset = TeamMember.objects.all()
     serializer_class = TeamSerializer
 
+class GalleryImagePagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 60
 
 class GalleryImageViewSet(viewsets.ModelViewSet):
+    pagination_class = GalleryImagePagination
     queryset = GalleryImage.objects.select_related(
         "sub_category",
         "sub_category__category",
