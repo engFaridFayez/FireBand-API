@@ -205,3 +205,23 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+
+# =====================================
+# SECURITY SETTINGS
+# =====================================
+
+# HTTPS enforcement in Production
+SECURE_SSL_REDIRECT = not DEBUG
+
+# Secure cookies in Production
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# HSTS
+SECURE_HSTS_SECONDS = 0 if DEBUG else 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+
+# Trust HTTPS forwarded by Nginx
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
