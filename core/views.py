@@ -81,6 +81,4 @@ class BookingView(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAdminUser()]
     def perform_create(self, serializer):
-        booking = serializer.save()
-
-        send_booking_email(booking)
+        serializer.save()
