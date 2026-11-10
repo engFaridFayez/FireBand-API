@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils.text import slugify
 from core.models import SubCategory
 
 # Create your models here.
@@ -44,13 +44,29 @@ class Reel(models.Model):
         ("tiktok", "TikTok"),
     ]
 
+
+
     sub_category = models.ForeignKey(
         SubCategory,
         on_delete=models.CASCADE,
         related_name="reels",
     )
 
-    title = models.CharField(max_length=200,blank=True)
+    title = models.CharField(max_length=200)
+
+    slug = models.SlugField(
+        max_length=220,
+        unique=True,
+        blank=True,
+        allow_unicode=True,
+    )
+    description = models.TextField(
+        blank=True,
+    )
+    artist = models.CharField(
+        max_length=200,
+        blank=True,
+    )
 
     thumbnail = models.ImageField(
         upload_to="reels/thumbnails/",
@@ -71,6 +87,26 @@ class Reel(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(
+                self.title,
+                allow_unicode=True
+            )[:200] or "reel"
+
+            slug = base_slug
+            counter = 2
+
+            while Reel.objects.filter(
+                slug=slug
+            ).exclude(pk=self.pk).exists():
+
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
     class Meta:
         ordering = ["order", "-created_at"]
 

@@ -225,3 +225,8 @@ SECURE_HSTS_PRELOAD = False
 
 # Trust HTTPS forwarded by Nginx
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+PUBLIC_SITE_URL = os.getenv(
+    "PUBLIC_SITE_URL",
+    "http://localhost:5000"
+)

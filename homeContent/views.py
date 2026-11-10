@@ -9,7 +9,60 @@ from rest_framework import status
 from django.db import transaction
 from django.db.models import Max
 from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
+from django.views.decorators.http import require_GET
+from xml.etree import ElementTree as ET
+from urllib.parse import quote
+from django.conf import settings
 # Create your views here.
+
+@require_GET
+def sitemap_xml(request):
+    base_url = settings.PUBLIC_SITE_URL.rstrip("/")
+
+    namespace = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    ET.register_namespace("", namespace)
+
+    root = ET.Element(f"{{{namespace}}}urlset")
+
+    def add_url(url):
+        url_element = ET.SubElement(
+            root,
+            f"{{{namespace}}}url"
+        )
+
+        ET.SubElement(
+            url_element,
+            f"{{{namespace}}}loc"
+        ).text = url
+
+    # Static public pages
+    add_url(f"{base_url}/")
+    add_url(f"{base_url}/portfolio")
+    add_url(f"{base_url}/pricing")
+
+    # Dynamic active reels
+    slugs = Reel.objects.filter(
+        is_active=True
+    ).exclude(
+        slug=""
+    ).values_list("slug", flat=True)
+
+    for slug in slugs:
+        encoded_slug = quote(slug, safe="")
+        add_url(f"{base_url}/videos/{encoded_slug}")
+
+    xml_content = ET.tostring(
+        root,
+        encoding="utf-8",
+        xml_declaration=True
+    )
+
+    return HttpResponse(
+        xml_content,
+        content_type="application/xml; charset=utf-8"
+    )
 class ShowViewset(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Show.objects.all()
@@ -115,8 +168,9 @@ class ReelViewSet(viewsets.ModelViewSet):
         return ReelSerializer
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "by_slug"]:
             return [permissions.AllowAny()]
+
         return [IsAdminOrReadOnly()]
 
     def get_queryset(self):
@@ -142,3 +196,22 @@ class ReelViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_active=True)
 
         return queryset
+    
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"by-slug/(?P<slug>[^/.]+)"
+    )
+    def by_slug(self, request, slug=None):
+        reel = get_object_or_404(
+            Reel.objects.select_related(
+                "sub_category",
+                "sub_category__category"
+            ),
+            slug=slug,
+            is_active=True
+        )
+
+        serializer = self.get_serializer(reel)
+
+        return Response(serializer.data)

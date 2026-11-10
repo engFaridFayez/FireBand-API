@@ -64,6 +64,7 @@ class GalleryBulkUploadSerializer(serializers.Serializer):
 #Reels
 class ReelSerializer(serializers.ModelSerializer):
     sub_category = SubCategorySerializer(read_only=True)
+    
     platform_display = serializers.CharField(
         source="get_platform_display",
         read_only=True,
@@ -79,12 +80,16 @@ class ReelWriteSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    slug = serializers.ReadOnlyField()
 
     class Meta:
         model = Reel
         fields = [
             "sub_category",
             "title",
+            "slug",
+            "description",
+            "artist",
             "thumbnail",
             "platform",
             "embed_url",
@@ -93,43 +98,58 @@ class ReelWriteSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        platform = attrs.get("platform")
+        platform = attrs.get(
+            "platform",
+            getattr(self.instance, "platform", None)
+        )
+
         url = attrs.get("embed_url")
+
+        if (
+            self.instance
+            and "platform" in attrs
+            and platform != self.instance.platform
+            and not url
+        ):
+            raise serializers.ValidationError({
+                "embed_url": "A new video URL is required when changing the platform."
+            })
 
         if not url:
             return attrs
 
-        domain = urlparse(url).netloc.lower()
+        domain = (urlparse(url).hostname or "").lower().rstrip(".")
 
         platform_domains = {
             "youtube": [
                 "youtube.com",
-                "www.youtube.com",
                 "youtu.be",
             ],
             "facebook": [
                 "facebook.com",
-                "www.facebook.com",
                 "fb.watch",
             ],
         }
-
-        allowed_domains = platform_domains.get(platform, [])
-
-        if not any(
-            domain == allowed or domain.endswith(f".{allowed}")
-            for allowed in allowed_domains
-        ):
-            raise serializers.ValidationError(
-                {
-                    "embed_url": f"This URL does not belong to {platform.title()}."
-                }
-            )
 
         converters = {
             "youtube": get_youtube_embed_url,
             "facebook": get_facebook_embed_url,
         }
+
+        if platform not in converters:
+            raise serializers.ValidationError({
+                "platform": "This platform is not supported yet."
+            })
+
+        allowed_domains = platform_domains[platform]
+
+        if not any(
+            domain == allowed or domain.endswith(f".{allowed}")
+            for allowed in allowed_domains
+        ):
+            raise serializers.ValidationError({
+                "embed_url": f"This URL does not belong to {platform.title()}."
+            })
 
         attrs["embed_url"] = converters[platform](url)
 
