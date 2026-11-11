@@ -228,5 +228,5 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 PUBLIC_SITE_URL = os.getenv(
     "PUBLIC_SITE_URL",
-    "http://localhost:5000"
-)
+    "https://fireband-eg.com"
+).rstrip("/")
