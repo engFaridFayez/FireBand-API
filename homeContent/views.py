@@ -41,18 +41,20 @@ def sitemap_xml(request):
     add_url(f"{base_url}/")
     add_url(f"{base_url}/portfolio")
     add_url(f"{base_url}/pricing")
+    add_url(f"{base_url}/booking")
 
-    # Dynamic active reels
-    slugs = Reel.objects.filter(
-        is_active=True
-    ).exclude(
-        slug=""
-    ).values_list("slug", flat=True)
+# Dynamic active reels
+    slugs = (
+        Reel.objects.filter(is_active=True)
+        .exclude(slug__isnull=True)
+        .exclude(slug="")
+        .values_list("slug", flat=True)
+        .distinct()
+    )
 
     for slug in slugs:
         encoded_slug = quote(slug, safe="")
         add_url(f"{base_url}/videos/{encoded_slug}")
-
     xml_content = ET.tostring(
         root,
         encoding="utf-8",
